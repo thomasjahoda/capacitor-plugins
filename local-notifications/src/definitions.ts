@@ -805,6 +805,62 @@ export interface LocalNotificationSchema {
    * Only available for Android. TODO also iOS.
    */
   updateSilently?: boolean;
+
+  /**
+   * If true, sets `usesChronometer` to display the time elapsed since {@link when}.
+   *
+   * Only available for Android.
+   */
+  useChronometer?: boolean;
+
+  /**
+   * Sets the Chronometer to count down instead of counting up.
+   *
+   * This is only relevant if setUsesChronometer(boolean) has been set to true. If it
+   * isn't set the chronometer will count up.
+   *
+   * Only available for Android.
+   */
+  chronometerCountDown?: boolean;
+
+  /**
+   * The time when the event occurred.
+   * Notifications in the panel are sorted by this time.
+   *
+   * Only available for Android.
+   */
+  when?: Date;
+
+  /**
+   * Control whether the timestamp of {@link when} is shown in the content view.
+   * The default is {@code true}.
+   *
+   * Only available for Android.
+   */
+  showWhen?: boolean;
+
+  /**
+   * The accent color to use.
+   * Format: argb.
+   * See {@link #colorized} for more information.
+   *
+   * Only available for Android.
+   */
+  color?: string;
+
+  /**
+   * Set whether this notification should be colorized. When set, the color set with
+   * {@link color} will be used as the background color of this notification.
+   * <p>
+   * This should only be used for high priority ongoing tasks like navigation, an ongoing
+   * call, or other similarly high-priority events for the user.
+   * <p>
+   * For most styles, the coloring will only be applied if the notification is for a
+   * foreground service notification.
+   *
+   * Only available for Android.
+   */
+  colorized?: boolean;
 }
 
 /**

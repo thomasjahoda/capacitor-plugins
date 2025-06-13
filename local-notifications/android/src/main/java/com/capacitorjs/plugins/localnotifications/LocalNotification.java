@@ -4,6 +4,8 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
@@ -11,6 +13,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.plugin.util.AssetUtil;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,6 +41,13 @@ public class LocalNotification {
     private boolean autoCancel;
     private boolean androidSilent;
     private boolean updateSilently;
+    private boolean useChronometer;
+    private boolean chronometerCountDown;
+    private Date when;
+    private Boolean showWhen;
+    private Integer color;
+    private boolean colorized;
+
     private JSObject extra;
     private List<LocalNotificationAttachment> attachments;
     private LocalNotificationSchedule schedule;
@@ -213,6 +223,54 @@ public class LocalNotification {
         this.updateSilently = updateSilently;
     }
 
+    public boolean isUseChronometer() {
+        return useChronometer;
+    }
+
+    public void setUseChronometer(boolean useChronometer) {
+        this.useChronometer = useChronometer;
+    }
+
+    public boolean isChronometerCountDown() {
+        return chronometerCountDown;
+    }
+
+    public void setChronometerCountDown(boolean chronometerCountDown) {
+        this.chronometerCountDown = chronometerCountDown;
+    }
+
+    public Date getWhen() {
+        return when;
+    }
+
+    public void setWhen(Date when) {
+        this.when = when;
+    }
+
+    public Boolean getShowWhen() {
+        return showWhen;
+    }
+
+    public void setShowWhen(Boolean showWhen) {
+        this.showWhen = showWhen;
+    }
+
+    public Integer getColor() {
+        return color;
+    }
+
+    public void setColor(Integer color) {
+        this.color = color;
+    }
+
+    public boolean isColorized() {
+        return colorized;
+    }
+
+    public void setColorized(boolean colorized) {
+        this.colorized = colorized;
+    }
+
     public String getChannelId() {
         return channelId;
     }
@@ -290,6 +348,18 @@ public class LocalNotification {
         localNotification.setAutoCancel(jsonObject.getBoolean("autoCancel", true));
         localNotification.setAndroidSilent(jsonObject.getBoolean("androidSilent", false));
         localNotification.setUpdateSilently(jsonObject.getBoolean("updateSilently", false));
+        localNotification.setUseChronometer(jsonObject.getBoolean("useChronometer", false));
+        localNotification.setChronometerCountDown(jsonObject.getBoolean("chronometerCountDown", false));
+        String whenString = jsonObject.getString("when");
+        if (whenString != null) {
+            localNotification.setWhen(DateTimeUtil.parseJsDateTime(whenString));
+        }
+        localNotification.setShowWhen(jsonObject.getBoolean("showWhen", true));
+        String colorString = jsonObject.getString("color");
+        if (colorString != null) {
+            localNotification.setColor(Color.parseColor(colorString));
+        }
+        localNotification.setColorized(jsonObject.getBoolean("colorized", false));
 
         try {
             JSONArray inboxList = jsonObject.getJSONArray("inboxList");
@@ -418,6 +488,26 @@ public class LocalNotification {
             ongoing +
             ", autoCancel=" +
             autoCancel +
+            ", androidSilent=" +
+            androidSilent +
+            ", updateSilently=" +
+            updateSilently +
+            ", useChronometer=" +
+            useChronometer +
+            ", chronometerCountDown=" +
+            chronometerCountDown +
+            ", when=" +
+            when +
+            ", showWhen=" +
+            showWhen +
+            ", color='" +
+            color +
+            '\'' +
+            ", colorized=" +
+            colorized +
+            ", channelId='" +
+            channelId +
+            '\'' +
             '}'
         );
     }
@@ -445,6 +535,15 @@ public class LocalNotification {
         if (groupSummary != that.groupSummary) return false;
         if (ongoing != that.ongoing) return false;
         if (autoCancel != that.autoCancel) return false;
+        if (androidSilent != that.androidSilent) return false;
+        if (updateSilently != that.updateSilently) return false;
+        if (useChronometer != that.useChronometer) return false;
+        if (chronometerCountDown != that.chronometerCountDown) return false;
+        if (when != null ? !when.equals(that.when) : that.when != null) return false;
+        if (showWhen != null ? !showWhen.equals(that.showWhen) : that.showWhen != null) return false;
+        if (color != null ? !color.equals(that.color) : that.color != null) return false;
+        if (colorized != that.colorized) return false;
+        if (channelId != null ? !channelId.equals(that.channelId) : that.channelId != null) return false;
         return schedule != null ? schedule.equals(that.schedule) : that.schedule == null;
     }
 
@@ -464,6 +563,15 @@ public class LocalNotification {
         result = 31 * result + (extra != null ? extra.hashCode() : 0);
         result = 31 * result + (attachments != null ? attachments.hashCode() : 0);
         result = 31 * result + (schedule != null ? schedule.hashCode() : 0);
+        result = 31 * result + Boolean.hashCode(androidSilent);
+        result = 31 * result + Boolean.hashCode(updateSilently);
+        result = 31 * result + Boolean.hashCode(useChronometer);
+        result = 31 * result + Boolean.hashCode(chronometerCountDown);
+        result = 31 * result + (when != null ? when.hashCode() : 0);
+        result = 31 * result + (showWhen != null ? showWhen.hashCode() : 0);
+        result = 31 * result + (color != null ? color.hashCode() : 0);
+        result = 31 * result + Boolean.hashCode(colorized);
+        result = 31 * result + (channelId != null ? channelId.hashCode() : 0);
         return result;
     }
 

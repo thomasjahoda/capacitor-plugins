@@ -263,6 +263,16 @@ public class LocalNotificationManager {
 
         mBuilder.setSilent(localNotification.isAndroidSilent());
 
+        mBuilder.setUsesChronometer(localNotification.isUseChronometer());
+        mBuilder.setShowWhen(localNotification.getShowWhen());
+        if (localNotification.getWhen() != null) {
+            mBuilder.setWhen(localNotification.getWhen().getTime());
+        }
+        if (localNotification.getColor() != null) {
+            mBuilder.setColor(localNotification.getColor());
+        }
+        mBuilder.setColorized(localNotification.isColorized());
+
         mBuilder.setSmallIcon(localNotification.getSmallIcon(context, getDefaultSmallIcon(context)));
         mBuilder.setLargeIcon(localNotification.getLargeIcon(context));
 

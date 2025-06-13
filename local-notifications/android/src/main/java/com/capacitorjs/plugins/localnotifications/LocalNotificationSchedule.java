@@ -3,13 +3,9 @@ package com.capacitorjs.plugins.localnotifications;
 import android.text.format.DateUtils;
 import com.getcapacitor.JSObject;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class LocalNotificationSchedule {
-
-    public static String JS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     private Date at;
     private Boolean repeats;
@@ -52,9 +48,7 @@ public class LocalNotificationSchedule {
         this.repeats = schedule.getBool("repeats");
         String dateString = schedule.getString("at");
         if (dateString != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat(JS_DATE_FORMAT);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            this.at = sdf.parse(dateString);
+            this.at = DateTimeUtil.parseJsDateTime(dateString);
         }
     }
 
