@@ -17,13 +17,17 @@ public class NotificationAction {
     private String id;
     private String title;
     private Boolean input;
+    private Boolean openApp;
+    private Boolean dismissNotification;
 
     public NotificationAction() {}
 
-    public NotificationAction(String id, String title, Boolean input) {
+    public NotificationAction(String id, String title, Boolean input, Boolean openApp, Boolean dismissNotification) {
         this.id = id;
         this.title = title;
         this.input = input;
+        this.openApp = openApp;
+        this.dismissNotification = dismissNotification;
     }
 
     public static Map<String, NotificationAction[]> buildTypes(JSArray types) {
@@ -45,6 +49,8 @@ public class NotificationAction {
                         notificationAction.setId(action.getString("id"));
                         notificationAction.setTitle(action.getString("title"));
                         notificationAction.setInput(action.getBool("input"));
+                        notificationAction.setOpenApp(action.getBool("openApp"));
+                        notificationAction.setDismissNotification(action.getBool("dismissNotification"));
                         typesArray[i] = notificationAction;
                     }
                     actionTypeMap.put(actionGroupId, typesArray);
@@ -78,5 +84,23 @@ public class NotificationAction {
 
     public void setInput(Boolean input) {
         this.input = input;
+    }
+
+    public boolean isOpenApp() {
+        // default to true
+        return !Boolean.FALSE.equals(openApp);
+    }
+
+    public void setOpenApp(Boolean openApp) {
+        this.openApp = openApp;
+    }
+
+    public boolean isDismissNotification() {
+        // default to true
+        return !Boolean.FALSE.equals(dismissNotification);
+    }
+
+    public void setDismissNotification(Boolean dismissNotification) {
+        this.dismissNotification = dismissNotification;
     }
 }

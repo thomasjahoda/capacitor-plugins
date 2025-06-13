@@ -18,6 +18,10 @@ public class NotificationDismissReceiver extends BroadcastReceiver {
             return;
         }
         boolean isRemovable = intent.getBooleanExtra(LocalNotificationManager.NOTIFICATION_IS_REMOVABLE_KEY, true);
+        Logger.debug(
+            Logger.tags("LN"),
+            "Notification dismissed with id: " + intExtra + ", isRemovable: " + isRemovable
+        );
         if (isRemovable) {
             NotificationStorage notificationStorage = new NotificationStorage(context);
             notificationStorage.deleteNotification(Integer.toString(intExtra));

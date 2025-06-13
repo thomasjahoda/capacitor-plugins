@@ -419,6 +419,24 @@ export interface Action {
    * @since 1.0.0
    */
   inputPlaceholder?: string;
+
+  /**
+   * Set to false to not open the app when the action is performed.
+   * Defaults to true.
+   *
+   * Only available for Android. (TODO also iOS)
+   *
+   * @since TODO
+   */
+  openApp?: boolean;
+
+  /**
+   * Set to false to not dismiss the notification when the action is performed.
+   * Defaults to true.
+   *
+   * This option is only available for Android. (TODO also iOS)
+   */
+  dismissNotification?: boolean;
 }
 
 /**
@@ -773,6 +791,20 @@ export interface LocalNotificationSchema {
    * @since 5.0.0
    */
   silent?: boolean;
+
+  /**
+   * If true, the notification will not play a sound or vibration on Android.
+   *
+   * Only available for Android.
+   */
+  androidSilent?: boolean;
+
+  /**
+   * If true, the notification will be updated silently if a notification with the same ID is currently being shown.
+   *
+   * Only available for Android. TODO also iOS.
+   */
+  updateSilently?: boolean;
 }
 
 /**

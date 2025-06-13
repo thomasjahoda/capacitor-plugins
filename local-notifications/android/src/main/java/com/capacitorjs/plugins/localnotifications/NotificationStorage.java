@@ -162,6 +162,8 @@ public class NotificationStorage {
                 editor.putString("id" + i, notificationActions[i].getId());
                 editor.putString("title" + i, notificationActions[i].getTitle());
                 editor.putBoolean("input" + i, notificationActions[i].isInput());
+                editor.putBoolean("openApp" + i, notificationActions[i].isOpenApp());
+                editor.putBoolean("dismissNotification" + i, notificationActions[i].isDismissNotification());
             }
             editor.apply();
         }
@@ -180,7 +182,9 @@ public class NotificationStorage {
             String id = storage.getString("id" + i, "");
             String title = storage.getString("title" + i, "");
             Boolean input = storage.getBoolean("input" + i, false);
-            actions[i] = new NotificationAction(id, title, input);
+            Boolean openApp = storage.getBoolean("openApp" + i, false);
+            Boolean dismissNotification = storage.getBoolean("dismissNotification" + i, false);
+            actions[i] = new NotificationAction(id, title, input, openApp, dismissNotification);
         }
         return actions;
     }

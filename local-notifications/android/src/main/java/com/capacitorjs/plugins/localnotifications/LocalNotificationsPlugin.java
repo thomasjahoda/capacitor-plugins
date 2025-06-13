@@ -61,7 +61,14 @@ public class LocalNotificationsPlugin extends Plugin {
         if (!Intent.ACTION_MAIN.equals(data.getAction())) {
             return;
         }
-        JSObject dataJson = manager.handleNotificationActionPerformed(data, notificationStorage);
+        JSObject dataJson = manager.handleNotificationActionPerformed(data, notificationStorage, true);
+        if (dataJson != null) {
+            notifyListeners("localNotificationActionPerformed", dataJson, true);
+        }
+    }
+
+    public void handleNotificationActionWithoutOpeningAppNotificationPerformed(Intent data) {
+        JSObject dataJson = manager.handleNotificationActionPerformed(data, notificationStorage, false);
         if (dataJson != null) {
             notifyListeners("localNotificationActionPerformed", dataJson, true);
         }

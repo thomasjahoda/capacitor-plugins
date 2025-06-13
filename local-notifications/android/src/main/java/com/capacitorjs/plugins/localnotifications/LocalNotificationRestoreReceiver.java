@@ -17,6 +17,7 @@ public class LocalNotificationRestoreReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (SDK_INT >= Build.VERSION_CODES.N) {
+            // directBootAware
             UserManager um = context.getSystemService(UserManager.class);
             if (um == null || !um.isUserUnlocked()) return;
         }

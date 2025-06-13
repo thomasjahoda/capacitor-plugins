@@ -36,6 +36,8 @@ public class LocalNotification {
     private boolean groupSummary;
     private boolean ongoing;
     private boolean autoCancel;
+    private boolean androidSilent;
+    private boolean updateSilently;
     private JSObject extra;
     private List<LocalNotificationAttachment> attachments;
     private LocalNotificationSchedule schedule;
@@ -195,6 +197,22 @@ public class LocalNotification {
         this.autoCancel = autoCancel;
     }
 
+    public boolean isAndroidSilent() {
+        return androidSilent;
+    }
+
+    public void setAndroidSilent(boolean androidSilent) {
+        this.androidSilent = androidSilent;
+    }
+
+    public boolean isUpdateSilently() {
+        return updateSilently;
+    }
+
+    public void setUpdateSilently(boolean updateSilently) {
+        this.updateSilently = updateSilently;
+    }
+
     public String getChannelId() {
         return channelId;
     }
@@ -270,6 +288,8 @@ public class LocalNotification {
         localNotification.setExtra(jsonObject.getJSObject("extra"));
         localNotification.setOngoing(jsonObject.getBoolean("ongoing", false));
         localNotification.setAutoCancel(jsonObject.getBoolean("autoCancel", true));
+        localNotification.setAndroidSilent(jsonObject.getBoolean("androidSilent", false));
+        localNotification.setUpdateSilently(jsonObject.getBoolean("updateSilently", false));
 
         try {
             JSONArray inboxList = jsonObject.getJSONArray("inboxList");

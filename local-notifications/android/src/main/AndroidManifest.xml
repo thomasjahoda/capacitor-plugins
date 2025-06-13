@@ -3,6 +3,7 @@
     <application>
         <receiver android:name="com.capacitorjs.plugins.localnotifications.TimedNotificationPublisher" />
         <receiver android:name="com.capacitorjs.plugins.localnotifications.NotificationDismissReceiver" />
+        <receiver android:name="com.capacitorjs.plugins.localnotifications.NotificationActionWithoutOpeningAppReceiver" />
         <receiver
             android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
             android:directBootAware="true"

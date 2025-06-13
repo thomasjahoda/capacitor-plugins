@@ -13,20 +13,26 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.RemoteInput;
+
 import com.getcapacitor.CapConfig;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginConfig;
 import com.getcapacitor.plugin.util.AssetUtil;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -61,18 +67,58 @@ public class LocalNotificationManager {
     }
 
     /**
-     * Method extecuted when notification is launched by user from the notification bar.
+     * Method executed when notification is pressed by user from the notification bar or action pressed without dismissing notification and also not starting activity.
      */
-    public JSObject handleNotificationActionPerformed(Intent data, NotificationStorage notificationStorage) {
+    public JSObject handleNotificationActionPerformed(Intent data, NotificationStorage notificationStorage, boolean appWasOpened) {
         Logger.debug(Logger.tags("LN"), "LocalNotification received: " + data.getDataString());
         int notificationId = data.getIntExtra(LocalNotificationManager.NOTIFICATION_INTENT_KEY, Integer.MIN_VALUE);
         if (notificationId == Integer.MIN_VALUE) {
             Logger.debug(Logger.tags("LN"), "Activity started without notification attached");
             return null;
         }
-        boolean isRemovable = data.getBooleanExtra(LocalNotificationManager.NOTIFICATION_IS_REMOVABLE_KEY, true);
-        if (isRemovable) {
-            notificationStorage.deleteNotification(Integer.toString(notificationId));
+
+        JSONObject notificationJsonObject = null;
+        try {
+            String notificationJsonString = data.getStringExtra(LocalNotificationManager.NOTIFICATION_OBJ_INTENT_KEY);
+            if (notificationJsonString != null) {
+                notificationJsonObject = new JSObject(notificationJsonString);
+            }
+        } catch (JSONException e) {
+            Logger.error(Logger.tags("LN"), "Error parsing notification JSON string from intent", e);
+        }
+        LocalNotification notification = null;
+        try {
+            notification = notificationJsonObject != null
+                    ? LocalNotification.buildNotificationFromJSObject(JSObject.fromJSONObject(notificationJsonObject))
+                    : notificationStorage.getSavedNotification(Integer.toString(notificationId));
+        } catch (ParseException | JSONException e) {
+            Logger.error(Logger.tags("LN"), "Error parsing notification object from intent", e);
+        }
+
+        String actionId = data.getStringExtra(LocalNotificationManager.ACTION_INTENT_KEY);
+        var dismissNotification = true;
+        if (actionId != null && !actionId.equals("dismiss") && !actionId.equals("tap")) {
+            var actionTypeId = notification != null ? notification.getActionTypeId() : null;
+            NotificationAction[] actionGroupActions = actionTypeId != null ? notificationStorage.getActionGroup(actionTypeId) : null;
+            var action = actionGroupActions != null ? (Arrays.stream(actionGroupActions)
+                    .filter(a -> a.getId().equals(actionId))
+                    .findFirst().orElse(null))
+                    : null;
+            if (action != null) {
+                dismissNotification = action.isDismissNotification();
+            } else {
+                Logger.warn(Logger.tags("LN"), "Action with id " + actionId + " not found for actionTypeId=" + actionTypeId + " and notificationId=" + notificationId);
+            }
+        }
+        if (dismissNotification) {
+            Logger.debug(
+                    Logger.tags("LN"),
+                    "Canceling notification with id: " + notificationId + ", actionId: " + actionId + ", dismissNotification: " + dismissNotification
+            );
+            boolean isRemovable = data.getBooleanExtra(LocalNotificationManager.NOTIFICATION_IS_REMOVABLE_KEY, true);
+            if (isRemovable) {
+                notificationStorage.deleteNotification(Integer.toString(notificationId));
+            }
         }
         JSObject dataJson = new JSObject();
 
@@ -81,19 +127,13 @@ public class LocalNotificationManager {
             CharSequence input = results.getCharSequence(LocalNotificationManager.REMOTE_INPUT_KEY);
             dataJson.put("inputValue", input.toString());
         }
-        String menuAction = data.getStringExtra(LocalNotificationManager.ACTION_INTENT_KEY);
 
-        dismissVisibleNotification(notificationId);
+        if (dismissNotification) {
+            dismissVisibleNotification(notificationId);
+        }
 
-        dataJson.put("actionId", menuAction);
-        JSONObject request = null;
-        try {
-            String notificationJsonString = data.getStringExtra(LocalNotificationManager.NOTIFICATION_OBJ_INTENT_KEY);
-            if (notificationJsonString != null) {
-                request = new JSObject(notificationJsonString);
-            }
-        } catch (JSONException e) {}
-        dataJson.put("notification", request);
+        dataJson.put("actionId", actionId);
+        dataJson.put("notification", notificationJsonObject);
         return dataJson;
     }
 
@@ -110,9 +150,9 @@ public class LocalNotificationManager {
             NotificationChannel channel = new NotificationChannel(DEFAULT_NOTIFICATION_CHANNEL_ID, name, importance);
             channel.setDescription(description);
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .build();
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build();
             Uri soundUri = this.getDefaultSoundUrl(context);
             if (soundUri != null) {
                 channel.setSound(soundUri, audioAttributes);
@@ -144,7 +184,9 @@ public class LocalNotificationManager {
                 }
                 return null;
             }
-            dismissVisibleNotification(id);
+            if (!localNotification.isUpdateSilently()) {
+                dismissVisibleNotification(id);
+            }
             cancelTimerForNotification(id);
             buildNotification(notificationManager, localNotification, call);
             ids.put(id);
@@ -166,19 +208,19 @@ public class LocalNotificationManager {
             channelId = localNotification.getChannelId();
         }
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this.context, channelId)
-            .setContentTitle(localNotification.getTitle())
-            .setContentText(localNotification.getBody())
-            .setAutoCancel(localNotification.isAutoCancel())
-            .setOngoing(localNotification.isOngoing())
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setGroupSummary(localNotification.isGroupSummary());
+                .setContentTitle(localNotification.getTitle())
+                .setContentText(localNotification.getBody())
+                .setAutoCancel(localNotification.isAutoCancel())
+                .setOngoing(localNotification.isOngoing())
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setGroupSummary(localNotification.isGroupSummary());
 
         if (localNotification.getLargeBody() != null) {
             // support multiline text
             mBuilder.setStyle(
-                new NotificationCompat.BigTextStyle()
-                    .bigText(localNotification.getLargeBody())
-                    .setSummaryText(localNotification.getSummaryText())
+                    new NotificationCompat.BigTextStyle()
+                            .bigText(localNotification.getLargeBody())
+                            .setSummaryText(localNotification.getSummaryText())
             );
         }
 
@@ -213,6 +255,13 @@ public class LocalNotificationManager {
 
         mBuilder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
         mBuilder.setOnlyAlertOnce(true);
+        // TODO support chronometer
+//        mBuilder.setWhen()
+//        mBuilder.setUsesChronometer()
+        // TODO inspect interactions with foreground behavior
+//        mBuilder.setForegroundServiceBehavior()
+
+        mBuilder.setSilent(localNotification.isAndroidSilent());
 
         mBuilder.setSmallIcon(localNotification.getSmallIcon(context, getDefaultSmallIcon(context)));
         mBuilder.setLargeIcon(localNotification.getLargeIcon(context));
@@ -238,7 +287,9 @@ public class LocalNotificationManager {
             try {
                 JSObject notificationJson = new JSObject(localNotification.getSource());
                 LocalNotificationsPlugin.fireReceived(notificationJson);
-            } catch (JSONException e) {}
+            } catch (JSONException e) {
+                Logger.error(Logger.tags("LN"), "Error parsing notification object", e);
+            }
             notificationManager.notify(localNotification.getId(), buildNotification);
         }
     }
@@ -246,13 +297,14 @@ public class LocalNotificationManager {
     // Create intents for open/dissmis actions
     private void createActionIntents(LocalNotification localNotification, NotificationCompat.Builder mBuilder) {
         // Open intent
-        Intent intent = buildIntent(localNotification, DEFAULT_PRESS_ACTION);
-        int flags = PendingIntent.FLAG_CANCEL_CURRENT;
+        Intent intent = buildIntent(localNotification, DEFAULT_PRESS_ACTION, null);
+        int baseFlags = 0;
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            flags = flags | PendingIntent.FLAG_MUTABLE;
+            baseFlags = baseFlags | PendingIntent.FLAG_MUTABLE;
         }
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, localNotification.getId(), intent, flags);
-        mBuilder.setContentIntent(pendingIntent);
+        int dismissFlags = PendingIntent.FLAG_CANCEL_CURRENT | baseFlags;
+        PendingIntent contentIntent = PendingIntent.getActivity(context, localNotification.getId(), intent, dismissFlags);
+        mBuilder.setContentIntent(contentIntent);
 
         // Build action types
         String actionTypeId = localNotification.getActionTypeId();
@@ -260,17 +312,23 @@ public class LocalNotificationManager {
             NotificationAction[] actionGroup = storage.getActionGroup(actionTypeId);
             for (NotificationAction notificationAction : actionGroup) {
                 // TODO Add custom icons to actions
-                Intent actionIntent = buildIntent(localNotification, notificationAction.getId());
-                PendingIntent actionPendingIntent = PendingIntent.getActivity(
-                    context,
-                    localNotification.getId() + notificationAction.getId().hashCode(),
-                    actionIntent,
-                    flags
+                Intent actionIntent = buildIntent(localNotification, notificationAction.getId(), notificationAction);
+                int actionFlags = notificationAction.isDismissNotification() ? dismissFlags : baseFlags;
+                PendingIntent actionPendingIntent = notificationAction.isOpenApp() ? PendingIntent.getActivity(
+                        context,
+                        localNotification.getId() + notificationAction.getId().hashCode(),
+                        actionIntent,
+                        actionFlags
+                ) : PendingIntent.getBroadcast(
+                        context,
+                        localNotification.getId() + notificationAction.getId().hashCode(),
+                        actionIntent,
+                        actionFlags
                 );
                 NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action.Builder(
-                    R.drawable.ic_transparent,
-                    notificationAction.getTitle(),
-                    actionPendingIntent
+                        R.drawable.ic_transparent,
+                        notificationAction.getTitle(),
+                        actionPendingIntent
                 );
                 if (notificationAction.isInput()) {
                     RemoteInput remoteInput = new RemoteInput.Builder(REMOTE_INPUT_KEY).setLabel(notificationAction.getTitle()).build();
@@ -287,28 +345,29 @@ public class LocalNotificationManager {
         dissmissIntent.putExtra(ACTION_INTENT_KEY, "dismiss");
         LocalNotificationSchedule schedule = localNotification.getSchedule();
         dissmissIntent.putExtra(NOTIFICATION_IS_REMOVABLE_KEY, schedule == null || schedule.isRemovable());
-        flags = 0;
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            flags = PendingIntent.FLAG_MUTABLE;
-        }
-        PendingIntent deleteIntent = PendingIntent.getBroadcast(context, localNotification.getId(), dissmissIntent, flags);
+        PendingIntent deleteIntent = PendingIntent.getBroadcast(context, localNotification.getId(), dissmissIntent, baseFlags);
         mBuilder.setDeleteIntent(deleteIntent);
     }
 
     @NonNull
-    private Intent buildIntent(LocalNotification localNotification, String action) {
+    private Intent buildIntent(LocalNotification localNotification, String actionId, @Nullable NotificationAction action) {
         Intent intent;
-        if (activity != null) {
-            intent = new Intent(context, activity.getClass());
+        if (action == null || action.isOpenApp()) {
+            if (activity != null) {
+                intent = new Intent(context, activity.getClass());
+            } else {
+                String packageName = context.getPackageName();
+                intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            }
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         } else {
-            String packageName = context.getPackageName();
-            intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            // do not open app
+            intent = new Intent(context, NotificationActionWithoutOpeningAppReceiver.class);
         }
-        intent.setAction(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra(NOTIFICATION_INTENT_KEY, localNotification.getId());
-        intent.putExtra(ACTION_INTENT_KEY, action);
+        intent.putExtra(ACTION_INTENT_KEY, actionId);
         intent.putExtra(NOTIFICATION_OBJ_INTENT_KEY, localNotification.getSource());
         LocalNotificationSchedule schedule = localNotification.getSchedule();
         intent.putExtra(NOTIFICATION_IS_REMOVABLE_KEY, schedule == null || schedule.isRemovable());
@@ -372,15 +431,15 @@ public class LocalNotificationManager {
     }
 
     private void setExactIfPossible(
-        AlarmManager alarmManager,
-        LocalNotificationSchedule schedule,
-        long trigger,
-        PendingIntent pendingIntent
+            AlarmManager alarmManager,
+            LocalNotificationSchedule schedule,
+            long trigger,
+            PendingIntent pendingIntent
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
             Logger.warn(
-                "Capacitor/LocalNotification",
-                "Exact alarms not allowed in user settings.  Notification scheduled with non-exact alarm."
+                    "Capacitor/LocalNotification",
+                    "Exact alarms not allowed in user settings.  Notification scheduled with non-exact alarm."
             );
             if (schedule.allowWhileIdle()) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pendingIntent);
@@ -400,6 +459,7 @@ public class LocalNotificationManager {
         List<Integer> notificationsToCancel = LocalNotification.getLocalNotificationPendingList(call);
         if (notificationsToCancel != null) {
             for (Integer id : notificationsToCancel) {
+                Logger.debug(Logger.tags("LN"), "Canceling notification with id: " + id);
                 dismissVisibleNotification(id);
                 cancelTimerForNotification(id);
                 storage.deleteNotification(Integer.toString(id));
@@ -422,6 +482,7 @@ public class LocalNotificationManager {
     }
 
     private void dismissVisibleNotification(int notificationId) {
+        Logger.debug(Logger.tags("LN"), "Dismissing notification with id (if visible): " + notificationId);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this.context);
         notificationManager.cancel(notificationId);
     }
