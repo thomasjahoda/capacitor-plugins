@@ -12,8 +12,13 @@ See [`CONTRIBUTING.md`](https://github.com/ionic-team/capacitor/blob/HEAD/CONTRI
     ```shell
     npm install
     ```
+3. Fix Android monorepo settings.
 
-3. Install SwiftLint if you're on macOS. Contributions to iOS code will be linted in CI if you don't have macOS.
+    ```shell
+    npm run set-settings-gradle-for-monorepo
+    ```
+
+4. Install SwiftLint if you're on macOS. Contributions to iOS code will be linted in CI if you don't have macOS.
 
     ```shell
     brew install swiftlint
@@ -21,8 +26,8 @@ See [`CONTRIBUTING.md`](https://github.com/ionic-team/capacitor/blob/HEAD/CONTRI
 
 Sometimes, it may be necessary to work on Capacitor in parallel with the plugin(s). In this case, a few extra steps are necessary:
 
-4. Follow the Capacitor repo's [local setup instructions](https://github.com/ionic-team/capacitor/blob/HEAD/CONTRIBUTING.md#local-setup).
-5. Toggle each plugin to use your local copy of Capacitor.
+5. Follow the Capacitor repo's [local setup instructions](https://github.com/ionic-team/capacitor/blob/HEAD/CONTRIBUTING.md#local-setup).
+6. Toggle each plugin to use your local copy of Capacitor.
 
     ```shell
     npm install
@@ -31,7 +36,7 @@ Sometimes, it may be necessary to work on Capacitor in parallel with the plugin(
 
     :bulb: *Remember not to commit unnecessary changes to `package.json` and `package-lock.json`.*
 
-6. Make sure your app is using local copies of the Capacitor plugin and Capacitor core.
+7. Make sure your app is using local copies of the Capacitor plugin and Capacitor core.
 
     ```shell
     cd my-app/
@@ -44,6 +49,9 @@ Sometimes, it may be necessary to work on Capacitor in parallel with the plugin(
 ### Monorepo Scripts
 
 To aid in managing these plugins, this repo has a variety of scripts (located in `scripts/`) that can be run with `npm`.
+
+#### `npm run set-settings-gradle-for-monorepo`
+Fix gradle settings for monorepo.
 
 #### `npm run set-capacitor-version "<version>"`
 
