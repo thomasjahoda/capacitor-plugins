@@ -15,6 +15,7 @@ public class LocalNotificationSchedule {
     private DateMatch on;
 
     private Boolean whileIdle;
+    private Boolean useAndroidSetAlarmClock;
 
     private JSObject scheduleObj;
 
@@ -31,6 +32,8 @@ public class LocalNotificationSchedule {
 
         // Schedule this notification to fire even if app is idled (Doze)
         this.whileIdle = schedule.getBoolean("allowWhileIdle", false);
+
+        this.useAndroidSetAlarmClock = schedule.getBoolean("useAndroidSetAlarmClock", false);
     }
 
     public LocalNotificationSchedule() {}
@@ -112,6 +115,14 @@ public class LocalNotificationSchedule {
 
     public boolean allowWhileIdle() {
         return this.whileIdle;
+    }
+
+    public void setUseAndroidSetAlarmClock(Boolean useAndroidSetAlarmClock) {
+        this.useAndroidSetAlarmClock = useAndroidSetAlarmClock;
+    }
+
+    public boolean isUseAndroidSetAlarmClock() {
+        return Boolean.TRUE.equals(this.useAndroidSetAlarmClock);
     }
 
     public boolean isRepeating() {

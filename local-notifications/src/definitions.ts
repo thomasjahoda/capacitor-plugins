@@ -900,6 +900,17 @@ export interface Schedule {
   allowWhileIdle?: boolean;
 
   /**
+   * Use Android https://developer.android.com/reference/android/app/AlarmManager#setAlarmClock(android.app.AlarmManager.AlarmClockInfo,%20android.app.PendingIntent)
+   * to show the notification at precisely the time specified by `at`.
+   * With allowWhileIdle, the notification might be delayed by a few seconds, because it is only 'nearly precise'.
+   *
+   * Only uses this when the permission SCHEDULE_EXACT_ALARM is granted, otherwise falls back to some non-precise variant.
+   *
+   * Only available for Android.
+   */
+  useAndroidSetAlarmClock?: boolean;
+
+  /**
    * Schedule a notification on particular interval(s).
    *
    * This is similar to scheduling [cron](https://en.wikipedia.org/wiki/Cron)

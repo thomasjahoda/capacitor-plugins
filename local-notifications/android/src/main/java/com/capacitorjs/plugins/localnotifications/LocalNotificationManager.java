@@ -1,5 +1,6 @@
 package com.capacitorjs.plugins.localnotifications;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -16,6 +17,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresPermission;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.RemoteInput;
@@ -363,15 +365,7 @@ public class LocalNotificationManager {
     private Intent buildIntent(LocalNotification localNotification, String actionId, @Nullable NotificationAction action) {
         Intent intent;
         if (action == null || action.isOpenApp()) {
-            if (activity != null) {
-                intent = new Intent(context, activity.getClass());
-            } else {
-                String packageName = context.getPackageName();
-                intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-            }
-            intent.setAction(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent = getOpenAppIntent();
         } else {
             // do not open app
             intent = new Intent(context, NotificationActionWithoutOpeningAppReceiver.class);
@@ -381,6 +375,21 @@ public class LocalNotificationManager {
         intent.putExtra(NOTIFICATION_OBJ_INTENT_KEY, localNotification.getSource());
         LocalNotificationSchedule schedule = localNotification.getSchedule();
         intent.putExtra(NOTIFICATION_IS_REMOVABLE_KEY, schedule == null || schedule.isRemovable());
+        return intent;
+    }
+
+    @NonNull
+    private Intent getOpenAppIntent() {
+        Intent intent;
+        if (activity != null) {
+            intent = new Intent(context, activity.getClass());
+        } else {
+            String packageName = context.getPackageName();
+            intent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        }
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return intent;
     }
 
@@ -457,12 +466,29 @@ public class LocalNotificationManager {
                 alarmManager.set(AlarmManager.RTC, trigger, pendingIntent);
             }
         } else {
-            if (schedule.allowWhileIdle()) {
+            if (schedule.isUseAndroidSetAlarmClock()) {
+                setAlarmClock(alarmManager, trigger, pendingIntent);
+            } else if (schedule.allowWhileIdle()) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pendingIntent);
             } else {
                 alarmManager.setExact(AlarmManager.RTC, trigger, pendingIntent);
             }
         }
+    }
+
+    @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
+    private void setAlarmClock(
+            AlarmManager alarmManager,
+            long trigger,
+            PendingIntent pendingIntent
+    ) {
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                getOpenAppIntent(),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+        );
+        alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(trigger, openAppPendingIntent), pendingIntent);
     }
 
     public void cancel(PluginCall call) {
