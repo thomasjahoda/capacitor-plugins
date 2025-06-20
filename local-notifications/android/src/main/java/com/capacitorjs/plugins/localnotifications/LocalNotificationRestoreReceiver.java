@@ -52,8 +52,8 @@ public class LocalNotificationRestoreReceiver extends BroadcastReceiver {
             storage.appendNotifications(updatedNotifications);
         }
 
-        CapConfig config = CapConfig.loadDefault(context);
-        LocalNotificationManager localNotificationManager = new LocalNotificationManager(storage, null, context, config);
+        CapConfig capConfig = CapConfig.loadDefault(context);
+        LocalNotificationManager localNotificationManager = new LocalNotificationManager(storage, null, context, capConfig);
 
         localNotificationManager.schedule(null, notifications);
     }

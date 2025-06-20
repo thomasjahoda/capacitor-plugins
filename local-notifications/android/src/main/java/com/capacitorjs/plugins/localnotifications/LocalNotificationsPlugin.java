@@ -13,11 +13,13 @@ import android.os.Build;
 import android.service.notification.StatusBarNotification;
 import androidx.activity.result.ActivityResult;
 import com.getcapacitor.Bridge;
+import com.getcapacitor.CapConfig;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginConfig;
 import com.getcapacitor.PluginHandle;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
@@ -48,11 +50,16 @@ public class LocalNotificationsPlugin extends Plugin {
     public void load() {
         super.load();
         notificationStorage = new NotificationStorage(getContext());
-        manager = new LocalNotificationManager(notificationStorage, getActivity(), getContext(), this.bridge.getConfig());
-        manager.createNotificationChannel();
+        CapConfig capConfig = this.bridge.getConfig();
+        manager = new LocalNotificationManager(notificationStorage, getActivity(), getContext(), capConfig);
         notificationChannelManager = new NotificationChannelManager(getActivity());
         notificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
         staticBridge = this.bridge;
+
+        PluginConfig pluginConfig = capConfig.getPluginConfiguration("LocalNotifications");
+        if (pluginConfig.getBoolean("createDefaultNotificationChannel", true)) {
+            manager.createDefaultNotificationChannel();
+        }
     }
 
     @Override

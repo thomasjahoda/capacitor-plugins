@@ -9,6 +9,18 @@ declare module '@capacitor/cli' {
      */
     LocalNotifications?: {
       /**
+       * Default: true.
+       * If false, the default notification channel will not be created and {@link sound} will be ignored for Android 26+.
+       * If this is false, make sure to always explicitly set the `channelId` property on each notification to a valid channel ID.
+       *
+       * Only available for Android.
+       *
+       * @since TODO
+       * @example true
+       */
+      createDefaultNotificationChannel?: boolean;
+
+      /**
        * Set the default status bar icon for notifications.
        *
        * Icons should be placed in your app's `res/drawable` folder. The value for
