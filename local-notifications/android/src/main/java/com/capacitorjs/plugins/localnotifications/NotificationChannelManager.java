@@ -7,11 +7,14 @@ import android.content.Context;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.net.Uri;
+
 import androidx.core.app.NotificationCompat;
+
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Logger;
 import com.getcapacitor.PluginCall;
+
 import java.util.List;
 
 public class NotificationChannelManager {
