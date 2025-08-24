@@ -266,6 +266,7 @@ public class LocalNotificationManager {
         mBuilder.setSilent(localNotification.isAndroidSilent());
 
         mBuilder.setUsesChronometer(localNotification.isUseChronometer());
+        mBuilder.setChronometerCountDown(localNotification.isChronometerCountDown());
         mBuilder.setShowWhen(localNotification.getShowWhen());
         if (localNotification.getWhen() != null) {
             mBuilder.setWhen(localNotification.getWhen().getTime());
