@@ -189,6 +189,7 @@ public class LocalNotificationManager {
             if (!localNotification.isUpdateSilently()) {
                 dismissVisibleNotification(id);
             }
+            // TODO [ios] also implement updateSilently that way in iOS or make sure it is - needs to cancel scheduled notification even if updateSilently is set
             cancelTimerForNotification(id);
             buildNotification(notificationManager, localNotification, call);
             ids.put(id);
